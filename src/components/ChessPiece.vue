@@ -79,8 +79,15 @@ const fontSize = computed(() => Math.round(props.pieceSize * 0.5))
 
   &.last-moved {
     box-shadow:
-      0 0 0 2px #4caf50,
+      0 0 0 3px #ff6d00,
+      0 0 10px rgba(255, 109, 0, 0.5),
       1px 1px 3px rgba(0, 0, 0, 0.3);
+    animation: last-moved-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes last-moved-pulse {
+    0%, 100% { box-shadow: 0 0 0 3px #ff6d00, 0 0 10px rgba(255, 109, 0, 0.5), 1px 1px 3px rgba(0, 0, 0, 0.3); }
+    50% { box-shadow: 0 0 0 3px #ff6d00, 0 0 18px rgba(255, 109, 0, 0.7), 1px 1px 3px rgba(0, 0, 0, 0.3); }
   }
 
   .piece-text {

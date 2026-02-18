@@ -12,6 +12,11 @@
         class="board-canvas"
       />
 
+      <template v-if="store.lastMove">
+        <div class="last-move-marker from" :style="getMarkerStyle(store.lastMove.fromX, store.lastMove.fromY)" />
+        <div class="last-move-marker to" :style="getMarkerStyle(store.lastMove.toX, store.lastMove.toY)" />
+      </template>
+
       <div
         v-for="(move, idx) in store.legalMoves"
         :key="'move-' + idx"
@@ -107,6 +112,16 @@ function getPieceStyle(piece: Piece) {
   return {
     left: `${padding.value + piece.x * cellSize.value}px`,
     top: `${padding.value + piece.y * cellSize.value}px`,
+  }
+}
+
+function getMarkerStyle(x: number, y: number) {
+  const size = Math.round(cellSize.value * 0.9)
+  return {
+    left: `${padding.value + x * cellSize.value}px`,
+    top: `${padding.value + y * cellSize.value}px`,
+    width: size + 'px',
+    height: size + 'px',
   }
 }
 
@@ -302,6 +317,24 @@ watch(() => store.pieces.map((p) => `${p.id}-${p.x}-${p.y}-${p.alive}`).join(','
 
 .board-canvas {
   display: block;
+}
+
+.last-move-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  pointer-events: none;
+  border-radius: 4px;
+
+  &.from {
+    border: 2.5px dashed rgba(255, 109, 0, 0.7);
+    background: rgba(255, 109, 0, 0.08);
+  }
+
+  &.to {
+    border: 2.5px solid rgba(255, 109, 0, 0.8);
+    background: rgba(255, 109, 0, 0.15);
+  }
 }
 
 .legal-move-dot {

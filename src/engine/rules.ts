@@ -211,12 +211,123 @@ export function isInCheck(board: Board, side: Side): boolean {
 }
 
 export function getValidMovesForPiece(piece: Piece, board: Board): { x: number; y: number }[] {
+  switch (piece.type) {
+    case 'jiang': return genJiangMoves(piece, board)
+    case 'shi': return genShiMoves(piece, board)
+    case 'xiang': return genXiangMoves(piece, board)
+    case 'ma': return genMaMoves(piece, board)
+    case 'ju': return genLineMoves(piece, board, false)
+    case 'pao': return genLineMoves(piece, board, true)
+    case 'bing': return genBingMoves(piece, board)
+    default: return []
+  }
+}
+
+function canLand(board: Board, x: number, y: number, side: Side): boolean {
+  if (!isInBoard(x, y)) return false
+  const t = board[y][x]
+  return !t || t.side !== side
+}
+
+function genJiangMoves(p: Piece, board: Board): { x: number; y: number }[] {
   const moves: { x: number; y: number }[] = []
-  for (let y = 0; y < BOARD_HEIGHT; y++) {
-    for (let x = 0; x < BOARD_WIDTH; x++) {
-      if (isValidMove(piece, x, y, board)) {
-        moves.push({ x, y })
+  const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+  for (const [dx, dy] of dirs) {
+    const nx = p.x + dx, ny = p.y + dy
+    if (inPalace(nx, ny, p.side) && canLand(board, nx, ny, p.side))
+      moves.push({ x: nx, y: ny })
+  }
+  return moves
+}
+
+function genShiMoves(p: Piece, board: Board): { x: number; y: number }[] {
+  const moves: { x: number; y: number }[] = []
+  const dirs = [[1, 1], [1, -1], [-1, 1], [-1, -1]]
+  for (const [dx, dy] of dirs) {
+    const nx = p.x + dx, ny = p.y + dy
+    if (inPalace(nx, ny, p.side) && canLand(board, nx, ny, p.side))
+      moves.push({ x: nx, y: ny })
+  }
+  return moves
+}
+
+function genXiangMoves(p: Piece, board: Board): { x: number; y: number }[] {
+  const moves: { x: number; y: number }[] = []
+  const dirs = [[2, 2], [2, -2], [-2, 2], [-2, -2]]
+  for (const [dx, dy] of dirs) {
+    const nx = p.x + dx, ny = p.y + dy
+    if (!isInBoard(nx, ny)) continue
+    if (p.side === 'red' && ny < 5) continue
+    if (p.side === 'black' && ny > 4) continue
+    if (getPieceAt(board, p.x + dx / 2, p.y + dy / 2)) continue
+    if (canLand(board, nx, ny, p.side))
+      moves.push({ x: nx, y: ny })
+  }
+  return moves
+}
+
+function genMaMoves(p: Piece, board: Board): { x: number; y: number }[] {
+  const moves: { x: number; y: number }[] = []
+  const offsets: [number, number, number, number][] = [
+    [1, 2, 0, 1], [1, -2, 0, -1], [-1, 2, 0, 1], [-1, -2, 0, -1],
+    [2, 1, 1, 0], [2, -1, 1, 0], [-2, 1, -1, 0], [-2, -1, -1, 0],
+  ]
+  for (const [dx, dy, bx, by] of offsets) {
+    const nx = p.x + dx, ny = p.y + dy
+    if (!isInBoard(nx, ny)) continue
+    if (getPieceAt(board, p.x + bx, p.y + by)) continue
+    if (canLand(board, nx, ny, p.side))
+      moves.push({ x: nx, y: ny })
+  }
+  return moves
+}
+
+function genLineMoves(p: Piece, board: Board, isPao: boolean): { x: number; y: number }[] {
+  const moves: { x: number; y: number }[] = []
+  const dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]]
+  for (const [dx, dy] of dirs) {
+    let jumped = false
+    let nx = p.x + dx, ny = p.y + dy
+    while (isInBoard(nx, ny)) {
+      const t = board[ny][nx]
+      if (isPao) {
+        if (!jumped) {
+          if (t) jumped = true
+          else moves.push({ x: nx, y: ny })
+        } else {
+          if (t) {
+            if (t.side !== p.side) moves.push({ x: nx, y: ny })
+            break
+          }
+        }
+      } else {
+        if (t) {
+          if (t.side !== p.side) moves.push({ x: nx, y: ny })
+          break
+        }
+        moves.push({ x: nx, y: ny })
       }
+      nx += dx
+      ny += dy
+    }
+  }
+  return moves
+}
+
+function genBingMoves(p: Piece, board: Board): { x: number; y: number }[] {
+  const moves: { x: number; y: number }[] = []
+  const forward = p.side === 'red' ? -1 : 1
+  const crossed = p.side === 'red' ? p.y <= 4 : p.y >= 5
+
+  const fy = p.y + forward
+  if (isInBoard(p.x, fy) && canLand(board, p.x, fy, p.side))
+    moves.push({ x: p.x, y: fy })
+
+  if (crossed) {
+    for (const sx of [-1, 1]) {
+      const nx = p.x + sx
+      if (isInBoard(nx, p.y) && canLand(board, nx, p.y, p.side))
+        moves.push({ x: nx, y: p.y })
     }
   }
   return moves
